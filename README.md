@@ -22,6 +22,7 @@ you want.
 * There may be some hidden i18n issues due to all the conversions between `FString`/`FText` and string indexing.
 * Some types (such as `FTalkLine`) are from my own dialogue system. It should be trivial to swap them out.
 * This has been tested with UE5.0EA, though it should work fine with earlier/later versions.
+* The current implementation was quickly thrown together (see: hacky) and unoptimized. There's lots of string handling that could be sped up.
 
 ## What's wrong with the "naive" approach?
 
