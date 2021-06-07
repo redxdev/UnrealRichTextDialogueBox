@@ -59,9 +59,11 @@ but as soon as the next letter is written, "dialogue" will jump to the next line
 +----------------------+
 ```
 
-This is jarring, especially if the reader is reading at the same speed that the text is being typed out. With normal text blocks this is
-(mostly) simple to fix: use the slate font measurement service to figure out how long text is, programmatically insert newlines until it
-fits within the bounds of your dialogue box, done. Rich text requires some more trickery due to supporting arbitrary numbers of fonts, sizes,
+This is jarring, especially if the reader is reading at the same speed that the text is being typed out. The general fix is to precalculate where
+the text needs to wrap, and then follow those line breaks instead of calculating new ones every time the effect adds a new letter.
+
+With normal text blocks this is (mostly) simple: use the slate font measurement service to figure out how long text is and programmatically insert newlines
+until it fits within the bounds of your dialogue box. Rich text requires some more trickery due to supporting arbitrary numbers of fonts, sizes,
 weights, and even images.
 
 ### 2. Rich Text Tags
