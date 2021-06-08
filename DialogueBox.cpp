@@ -178,11 +178,23 @@ void UDialogueBox::CalculateWrappedString()
 
 				FDialogueTextSegment Segment;
 				Run->AppendTextTo(Segment.Text, Block->GetTextRange());
+
+				// HACK: For some reason image decorators (and possibly other decorators that don't
+				// have actual text inside them) result in the run containing a zero width space instead of
+				// nothing. This messes up our checks for whether the text is empty or not, which doesn't
+				// have an effect on image decorators but might cause issues for other custom ones.
+				if (Segment.Text.Len() == 1 && Segment.Text[0] == 0x200B)
+				{
+					Segment.Text.Empty();
+				}
+
 				Segment.RunInfo = Run->GetRunInfo();
 				Segments.Add(Segment);
-				MaxLetterIndex += Segment.Text.Len();
 
-				if (!Segment.Text.IsEmpty() || !Segment.RunInfo.Name.IsEmpty())
+				// A segment with a named run should still take up time for the typewriter effect.
+				MaxLetterIndex += FMath::Max(Segment.Text.Len(), Segment.RunInfo.Name.IsEmpty() ? 0 : 1);
+
+				if (!Segment.Text.IsEmpty() && !Segment.RunInfo.Name.IsEmpty())
 				{
 					bHasWrittenText = true;
 				}
@@ -216,17 +228,38 @@ FString UDialogueBox::CalculateSegments()
 		const FDialogueTextSegment& Segment = Segments[SegmentIdx];
 		if (!Segment.RunInfo.Name.IsEmpty())
 		{
-			Result += TEXT("<") + Segment.RunInfo.Name + TEXT(">");
+			Result += FString::Printf(TEXT("<%s"), *Segment.RunInfo.Name);
+
+			if (!Segment.RunInfo.MetaData.IsEmpty())
+			{
+				for (const TTuple<FString, FString>& MetaData : Segment.RunInfo.MetaData)
+				{
+					Result += FString::Printf(TEXT(" %s=\"%s\""), *MetaData.Key, *MetaData.Value);
+				}
+			}
+
+			if (Segment.Text.IsEmpty())
+			{
+				Result += TEXT("/>");
+				Idx += 1; // This still takes up an index for the typewriter effect.
+			}
+			else
+			{
+				Result += TEXT(">");
+			}
 		}
 
-		int32 LettersLeft = CurrentLetterIndex - Idx + 1;
-		LettersLeft = FMath::Min(LettersLeft, Segment.Text.Len());
-		Idx += LettersLeft;
-		Result += Segment.Text.Mid(0, LettersLeft);
-
-		if (!Segment.RunInfo.Name.IsEmpty())
+		if (!Segment.Text.IsEmpty())
 		{
-			Result += TEXT("</>");
+			int32 LettersLeft = CurrentLetterIndex - Idx + 1;
+			LettersLeft = FMath::Min(LettersLeft, Segment.Text.Len());
+			Idx += LettersLeft;
+			Result += Segment.Text.Mid(0, LettersLeft);
+
+			if (!Segment.RunInfo.Name.IsEmpty())
+			{
+				Result += TEXT("</>");
+			}
 		}
 
 		++SegmentIdx;

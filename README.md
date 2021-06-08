@@ -12,11 +12,10 @@ you want.
 
 ## Known Issues/Limitations
 
-* Only a subset of rich text is supported - just basic text formatting. Inline images aren't supported. It's something I'd like to add
-  but haven't had time to yet.
-* Changing font-size anywhere except at the beginning of a line will result in the entire line "jumping" down slightly to accomodate the
-  new text size. I don't have a solution to this yet and don't see myself using different font sizes much, so it isn't something I'm
-  likely to get to any time soon.
+* Most if not all rich text features are supported, including basic formatting and custom decorators (and images!).
+* Changing font-size (or using a decorator that's taller than the existing text) anywhere except at the beginning of a line will result in
+  the entire line "jumping" down slightly to accomodate the new text size. I don't have a solution to this yet and don't see myself using
+  different font sizes much, so it isn't something I'm likely to get to any time soon.
 * Text wrapping is only calculated a single time when the first character is played. If the widget is resized for any reason, text will
   not respect the new boundaries. This should be simple to solve, I just haven't done it yet.
 * There may be some hidden i18n issues due to all the conversions between `FString`/`FText` and string indexing.
@@ -100,8 +99,8 @@ separate copy of it (which is something I might do in the future, but this was m
 
 The main alternative method that I tried was implementing `IBreakIterator` and passing it in to the text layout. This (theoretically) lets us tell the
 layout where it is allowed to insert a line break. We can use the normal line break iterator to pre-process the entire text and decide where line breaks should
-go. We store that line break data and then instead of processing the incoming text from the layout as we're running the effect, we use the cached line break information
-from earlier.
+go. We store that line break data and then instead of processing the incoming text from the layout as we're running the effect, we use the cached line
+break information from earlier.
 
-This would work if it wasn't for one sort-of-bug with text layout - if you don't tell the text layout it can place a line break at the final character of a string then
-it never ends up drawing that final section.
+This would work if it wasn't for one sort-of-bug with text layout - if you don't tell the text layout it can place a line break at the final character
+of a string then it never ends up drawing that final section.
