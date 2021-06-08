@@ -97,6 +97,14 @@ private:
 
 	TArray<FDialogueTextSegment> Segments;
 
+	// The section of the text that's already been printed out and won't ever change.
+	// This lets us cache some of the work we've already done. We can't cache absolutely
+	// everything as the last few characters of a string may change if they're related to
+	// a named run that hasn't been completed yet.
+	FString CachedSegmentText;
+	int32 CachedLetterIndex = 0;
+
+	int32 CurrentSegmentIndex = 0;
 	int32 CurrentLetterIndex = 0;
 	int32 MaxLetterIndex = 0;
 

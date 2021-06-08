@@ -44,8 +44,11 @@ void UDialogueBox::PlayLine(const FTalkLine& InLine)
 
 	CurrentLine = InLine;
 	CurrentLetterIndex = 0;
+	CachedLetterIndex = 0;
+	CurrentSegmentIndex = 0;
 	MaxLetterIndex = 0;
 	Segments.Empty();
+	CachedSegmentText.Empty();
 
 	if (CurrentLine.Text.IsEmpty())
 	{
@@ -219,13 +222,12 @@ void UDialogueBox::CalculateWrappedString()
 
 FString UDialogueBox::CalculateSegments()
 {
-	FString Result;
+	FString Result = CachedSegmentText;
 
-	int32 Idx = 0;
-	int32 SegmentIdx = 0;
-	while (Idx <= CurrentLetterIndex && SegmentIdx < Segments.Num())
+	int32 Idx = CachedLetterIndex;
+	while (Idx <= CurrentLetterIndex && CurrentSegmentIndex < Segments.Num())
 	{
-		const FDialogueTextSegment& Segment = Segments[SegmentIdx];
+		const FDialogueTextSegment& Segment = Segments[CurrentSegmentIndex];
 		if (!Segment.RunInfo.Name.IsEmpty())
 		{
 			Result += FString::Printf(TEXT("<%s"), *Segment.RunInfo.Name);
@@ -241,7 +243,7 @@ FString UDialogueBox::CalculateSegments()
 			if (Segment.Text.IsEmpty())
 			{
 				Result += TEXT("/>");
-				Idx += 1; // This still takes up an index for the typewriter effect.
+				++Idx; // This still takes up an index for the typewriter effect.
 			}
 			else
 			{
@@ -249,11 +251,14 @@ FString UDialogueBox::CalculateSegments()
 			}
 		}
 
+		bool bIsSegmentComplete = true;
 		if (!Segment.Text.IsEmpty())
 		{
 			int32 LettersLeft = CurrentLetterIndex - Idx + 1;
+			bIsSegmentComplete = LettersLeft >= Segment.Text.Len();
 			LettersLeft = FMath::Min(LettersLeft, Segment.Text.Len());
 			Idx += LettersLeft;
+
 			Result += Segment.Text.Mid(0, LettersLeft);
 
 			if (!Segment.RunInfo.Name.IsEmpty())
@@ -262,7 +267,16 @@ FString UDialogueBox::CalculateSegments()
 			}
 		}
 
-		++SegmentIdx;
+		if (bIsSegmentComplete)
+		{
+			CachedLetterIndex = Idx;
+			CachedSegmentText = Result;
+			++CurrentSegmentIndex;
+		}
+		else
+		{
+			break;
+		}
 	}
 
 	return Result;
