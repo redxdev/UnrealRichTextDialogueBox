@@ -197,7 +197,7 @@ void UDialogueBox::CalculateWrappedString()
 				// A segment with a named run should still take up time for the typewriter effect.
 				MaxLetterIndex += FMath::Max(Segment.Text.Len(), Segment.RunInfo.Name.IsEmpty() ? 0 : 1);
 
-				if (!Segment.Text.IsEmpty() && !Segment.RunInfo.Name.IsEmpty())
+				if (!Segment.Text.IsEmpty() || !Segment.RunInfo.Name.IsEmpty())
 				{
 					bHasWrittenText = true;
 				}
