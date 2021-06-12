@@ -53,9 +53,6 @@ public:
 	UDialogueBox(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	TObjectPtr<UTextBlock> NameText;
-
-	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UDialogueTextBlock> LineText;
 
 	// The amount of time between printing individual letters (for the "typewriter" effect).

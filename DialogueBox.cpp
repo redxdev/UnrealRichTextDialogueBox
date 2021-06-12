@@ -52,11 +52,6 @@ void UDialogueBox::PlayLine(const FTalkLine& InLine)
 
 	if (CurrentLine.Text.IsEmpty())
 	{
-		if (IsValid(NameText))
-		{
-			NameText->SetText(FText::GetEmpty());
-		}
-
 		if (IsValid(LineText))
 		{
 			LineText->SetText(FText::GetEmpty());
@@ -69,24 +64,6 @@ void UDialogueBox::PlayLine(const FTalkLine& InLine)
 	}
 	else
 	{
-		if (IsValid(NameText))
-		{
-			FText SpeakerName;
-			if (CurrentLine.SpeakerNameOverride.IsEmpty())
-			{
-				if (IsValid(CurrentLine.Speaker))
-				{
-					SpeakerName = CurrentLine.Speaker->Name;
-				}
-			}
-			else
-			{
-				SpeakerName = CurrentLine.SpeakerNameOverride;
-			}
-
-			NameText->SetText(SpeakerName);
-		}
-
 		if (IsValid(LineText))
 		{
 			LineText->SetText(FText::GetEmpty());
