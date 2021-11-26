@@ -19,7 +19,6 @@ you want.
 * Text wrapping is only calculated a single time when the first character is played. If the widget is resized for any reason, text will
   not respect the new boundaries. This should be simple to solve, I just haven't done it yet.
 * There may be some hidden i18n issues due to all the conversions between `FString`/`FText` and string indexing.
-* Some types (such as `FTalkLine`) are from my own dialogue system. It should be trivial to swap them out.
 * This has been tested with UE5.0EA, though it should work fine with earlier/later versions.
 * The current implementation was quickly thrown together (see: hacky) and somewhat unoptimized. Some data is duplicated more than it needs
   to be, and "segment" calculation is a bit more complex than I'd like.
