@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/RichTextBlock.h"
-#include "Components/TextBlock.h"
-#include "Flame/Talk/TalkTypes.h"
 #include "Framework/Text/RichTextLayoutMarshaller.h"
 #include "Framework/Text/SlateTextLayout.h"
 #include "DialogueBox.generated.h"
@@ -65,10 +63,10 @@ public:
 	float EndHoldTime = 0.15f;
 
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Box")
-	void PlayLine(const FTalkLine& InLine);
+	void PlayLine(const FText& InLine);
 
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Box")
-	void GetCurrentLine(FTalkLine& OutLine) const { OutLine = CurrentLine; }
+	void GetCurrentLine(FText& OutLine) const { OutLine = CurrentLine; }
 
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Box")
 	bool HasFinishedPlayingLine() const { return bHasFinishedPlaying; }
@@ -90,7 +88,7 @@ private:
 	FString CalculateSegments();
 
 	UPROPERTY()
-	FTalkLine CurrentLine;
+	FText CurrentLine;
 
 	TArray<FDialogueTextSegment> Segments;
 

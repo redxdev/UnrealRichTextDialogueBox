@@ -35,7 +35,7 @@ UDialogueBox::UDialogueBox(const FObjectInitializer& ObjectInitializer)
 	bHasFinishedPlaying = true;
 }
 
-void UDialogueBox::PlayLine(const FTalkLine& InLine)
+void UDialogueBox::PlayLine(const FText& InLine)
 {
 	check(GetWorld());
 
@@ -50,7 +50,7 @@ void UDialogueBox::PlayLine(const FTalkLine& InLine)
 	Segments.Empty();
 	CachedSegmentText.Empty();
 
-	if (CurrentLine.Text.IsEmpty())
+	if (CurrentLine.IsEmpty())
 	{
 		if (IsValid(LineText))
 		{
@@ -144,7 +144,7 @@ void UDialogueBox::CalculateWrappedString()
 		const FVector2D TextBoxSize = TextBoxGeometry.GetLocalSize();
 
 		Layout->SetWrappingWidth(TextBoxSize.X);
-		Marshaller->SetText(CurrentLine.Text.ToString(), *Layout.Get());
+		Marshaller->SetText(CurrentLine.ToString(), *Layout.Get());
 		Layout->UpdateIfNeeded();
 
 		bool bHasWrittenText = false;
@@ -192,7 +192,7 @@ void UDialogueBox::CalculateWrappedString()
 	}
 	else
 	{
-		Segments.Add(FDialogueTextSegment{CurrentLine.Text.ToString()});
+		Segments.Add(FDialogueTextSegment{CurrentLine.ToString()});
 		MaxLetterIndex = Segments[0].Text.Len();
 	}
 }
