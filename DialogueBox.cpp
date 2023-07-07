@@ -4,6 +4,7 @@
 #include "Engine/Font.h"
 #include "Styling/SlateStyle.h"
 #include "Widgets/Text/SRichTextBlock.h"
+#include "TimerManager.h"
 
 TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 {
