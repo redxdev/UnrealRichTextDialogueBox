@@ -43,7 +43,7 @@ struct FDialogueTextSegment
 };
 
 UCLASS()
-class FLAME_API UDialogueBox : public UUserWidget
+class UDialogueBox : public UUserWidget
 {
 	GENERATED_BODY()
 
