@@ -10,10 +10,67 @@
 #include <Framework/Text/RichTextMarkupProcessing.h>
 #include <Framework/Text/ShapedTextCache.h>
 
-class FDialogueBoxTextRun : public FSlateTextRun
+/**
+ * Text run that represents a segment of text which is in the process of being typed out.
+ * The size of the text block will represent the final size of each word rather than the provided content.
+ */
+class FPartialDialogueRun : public FSlateTextRun
 {
 public:
-	FVector2D MeasureInternal( int32 BeginIndex, int32 EndIndex, float Scale, const FRunTextContext& TextContext, const FString& InText ) const
+	FPartialDialogueRun(const FRunInfo& InRunInfo, const TSharedRef< const FString >& InText, const FTextBlockStyle& InStyle, const FTextRange& InRange, const FDialogueTextSegment& Segment)
+		:
+		FSlateTextRun(InRunInfo, InText, InStyle, InRange),
+		Segment(Segment)
+	{
+	}
+
+	FVector2D Measure(int32 StartIndex, int32 EndIndex, float Scale, const FRunTextContext& TextContext) const override
+	{
+		if (EndIndex != Range.EndIndex)
+		{
+			// measuring text within existing range, refer to normal implementation
+			return FSlateTextRun::Measure(StartIndex, EndIndex, Scale, TextContext);
+		}
+		else
+		{
+			// attempting to measure to end of typed range, construct future typed content from source segment and measure based on that instead.
+			// this will ensure text is wrapped prior to being fully typed.
+			FString combinedContent = ConstructCombinedText();
+			return MeasureInternal(StartIndex, combinedContent.Len(), Scale, TextContext, combinedContent);
+		}
+	}
+
+private:
+	FString ConstructCombinedText() const
+	{
+		const int32 existingChars = Range.Len();
+
+		FString futureContent;
+		if (!Segment.RunInfo.ContentRange.IsEmpty())
+		{
+			// with tags
+			futureContent = Segment.Text.Mid(Segment.RunInfo.ContentRange.BeginIndex - Segment.RunInfo.OriginalRange.BeginIndex + existingChars, Segment.RunInfo.ContentRange.Len() - existingChars);
+		}
+		else
+		{
+			// no tags
+			futureContent = Segment.Text.Mid(existingChars, Segment.RunInfo.OriginalRange.Len() - existingChars);
+		}
+		// trim to next possible wrap opportunity
+		for (int32 i = 0; i < futureContent.Len(); ++i)
+		{
+			TCHAR futureChar = futureContent[i];
+			if (FText::IsWhitespace(futureChar))
+			{
+				futureContent.LeftInline(i);
+				break;
+			}
+		}
+
+		return *Text + futureContent;
+	}
+
+	FVector2D MeasureInternal(int32 BeginIndex, int32 EndIndex, float Scale, const FRunTextContext& TextContext, const FString& InText) const
 	{
 		const FVector2D ShadowOffsetToApply((EndIndex == Range.EndIndex) ? FMath::Abs(Style.ShadowOffset.X * Scale) : 0.0f, FMath::Abs(Style.ShadowOffset.Y * Scale));
 
@@ -31,63 +88,16 @@ public:
 		return ShapedTextCacheUtil::MeasureShapedText(TextContext.ShapedTextCache, FCachedShapedTextKey(FTextRange(0, InText.Len()), Scale, TextContext, Style.Font), FTextRange(BeginIndex, EndIndex), *InText) + ShadowOffsetToApply + OutlineSizeToApply;
 	}
 
-	FVector2D Measure(int32 StartIndex, int32 EndIndex, float Scale, const FRunTextContext& TextContext) const override
-	{
-		if (EndIndex != Range.EndIndex)
-		{
-			return FSlateTextRun::Measure(StartIndex, EndIndex, Scale, TextContext);
-		}
-
-		int32 partialContent = Range.Len();
-		check(partialContent >= 0);
-
-		FString futureContent;
-		if (!Segment.RunInfo.ContentRange.IsEmpty())
-		{
-			// with tags
-			futureContent = Segment.Text.Mid(Segment.RunInfo.ContentRange.BeginIndex - Segment.RunInfo.OriginalRange.BeginIndex + partialContent, Segment.RunInfo.ContentRange.Len() - partialContent);
-		}
-		else
-		{
-			// no tags
-			futureContent = Segment.Text.Mid(partialContent, Segment.RunInfo.OriginalRange.Len() - partialContent);
-		}
-		for (int32 i = 0; i < futureContent.Len(); ++i)
-		{
-			TCHAR futureChar = futureContent[i];
-			if (FText::IsWhitespace(futureChar))
-			{
-				futureContent.LeftInline(i);
-				break;
-			}
-		}
-
-		FString combinedContent = *Text + futureContent;
-		return MeasureInternal(StartIndex, combinedContent.Len(), Scale, TextContext, combinedContent);
-	}
-
-	FDialogueBoxTextRun(const FRunInfo& InRunInfo, const TSharedRef< const FString >& InText, const FTextBlockStyle& InStyle, const FDialogueTextSegment& Segment)
-		:
-		FSlateTextRun(InRunInfo, InText, InStyle),
-		Segment(Segment)
-	{
-	}
-
-	FDialogueBoxTextRun(const FRunInfo& InRunInfo, const TSharedRef< const FString >& InText, const FTextBlockStyle& InStyle, const FTextRange& InRange, const FDialogueTextSegment& Segment)
-		:
-		FSlateTextRun(InRunInfo, InText, InStyle, InRange),
-		Segment(Segment)
-	{
-	}
-
-private:
 	const FDialogueTextSegment& Segment;
 };
 
-class FDialogueBoxTextDecorator : public ITextDecorator
+/**
+ * A decorator that intercepts partially typed segments and allocates an FPartialDialogueRun to represent them.
+ */
+class FPartialDialogueDecorator : public ITextDecorator
 {
 public:
-	FDialogueBoxTextDecorator(const TArray<FDialogueTextSegment>* Segments, const int32* CurrentSegmentIndex)
+	FPartialDialogueDecorator(const TArray<FDialogueTextSegment>* Segments, const int32* CurrentSegmentIndex)
 		:
 		Segments(Segments),
 		CurrentSegmentIndex(CurrentSegmentIndex)
@@ -112,6 +122,7 @@ public:
 
 	TSharedRef<ISlateRun> Create(const TSharedRef<class FTextLayout>& TextLayout, const FTextRunParseResults& InRunInfo, const FString& ProcessedString, const TSharedRef<FString>& InOutModelText, const ISlateStyle* InStyle) override
 	{
+		// copied from FRichTextLayoutMarshaller::AppendRunsForText
 		FRunInfo RunInfo(InRunInfo.Name);
 		for (const TPair<FString, FTextRange>& Pair : InRunInfo.MetaData)
 		{
@@ -119,23 +130,18 @@ public:
 			RunInfo.MetaData.Add(Pair.Key, ProcessedString.Mid(Pair.Value.BeginIndex, Length));
 		}
 
-		const FTextBlockStyle* TextBlockStyle;
-		FTextRange ModelRange;
-		ModelRange.BeginIndex = InOutModelText->Len();
-		if (!(InRunInfo.Name.IsEmpty()) && InStyle->HasWidgetStyle< FTextBlockStyle >(FName(*InRunInfo.Name)))
-		{
-			*InOutModelText += ProcessedString.Mid(InRunInfo.ContentRange.BeginIndex, InRunInfo.ContentRange.Len());
-			TextBlockStyle = &(InStyle->GetWidgetStyle< FTextBlockStyle >(FName(*InRunInfo.Name)));
-		}
-		else
-		{
-			*InOutModelText += ProcessedString.Mid(InRunInfo.OriginalRange.BeginIndex, InRunInfo.OriginalRange.Len());
-			TextBlockStyle = &static_cast<FSlateTextLayout&>(*TextLayout).GetDefaultTextStyle();
-		}
-		ModelRange.EndIndex = InOutModelText->Len();
+		// resolve text style
+		const bool CanParseTags = !InRunInfo.Name.IsEmpty() && InStyle->HasWidgetStyle< FTextBlockStyle >(*InRunInfo.Name);
+		const FTextBlockStyle& Style = CanParseTags ? InStyle->GetWidgetStyle< FTextBlockStyle >(*InRunInfo.Name) : static_cast<FSlateTextLayout&>(*TextLayout).GetDefaultTextStyle();
+
+		// skip tags if valid style parser found
+		const FTextRange& Range = CanParseTags ? InRunInfo.ContentRange : InRunInfo.OriginalRange;
+		FTextRange ModelRange(InOutModelText->Len(), InOutModelText->Len() + Range.Len());
 
 		const FDialogueTextSegment& Segment = (*Segments)[*CurrentSegmentIndex];
-		return MakeShared<FDialogueBoxTextRun>(RunInfo, InOutModelText, *TextBlockStyle, ModelRange, Segment);
+		*InOutModelText += Segment.Text.Mid(Range.BeginIndex - Segment.RunInfo.OriginalRange.BeginIndex, Range.Len());
+
+		return MakeShared<FPartialDialogueRun>(RunInfo, InOutModelText, Style, ModelRange, Segment);
 	}
 
 private:
@@ -157,7 +163,7 @@ TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 	TSharedRef<FRichTextLayoutMarshaller> Marshaller = FRichTextLayoutMarshaller::Create(TextParser, CreateMarkupWriter(), CreatedDecorators, StyleInstance.Get());
 	if (Segments && CurrentSegmentIndex)
 	{
-		Marshaller->AppendInlineDecorator(MakeShared<FDialogueBoxTextDecorator>(Segments, CurrentSegmentIndex));
+		Marshaller->AppendInlineDecorator(MakeShared<FPartialDialogueDecorator>(Segments, CurrentSegmentIndex));
 	}
 
 	MyRichTextBlock =
@@ -331,8 +337,8 @@ FString UDialogueBox::CalculateSegments()
 			continue;
 		}
 
-		// is this segment an inline tag?
-		if (!Segment.RunInfo.Name.IsEmpty() && !Segment.RunInfo.MetaData.IsEmpty())
+		// is this segment an inline tag? eg. <blah/>
+		if (!Segment.RunInfo.Name.IsEmpty() && !Segment.RunInfo.OriginalRange.IsEmpty() && Segment.RunInfo.ContentRange.IsEmpty())
 		{
 			// seek to end of tag - treat as single character
 			int32 SegmentEndIndex = std::max(Segment.RunInfo.OriginalRange.EndIndex, Segment.RunInfo.ContentRange.EndIndex);
