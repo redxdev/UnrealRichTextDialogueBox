@@ -149,8 +149,6 @@ private:
 	const int32* CurrentSegmentIndex;
 };
 
-
-
 TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 {
 	// Copied from URichTextBlock::RebuildWidget
@@ -163,6 +161,7 @@ TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 	TSharedRef<FRichTextLayoutMarshaller> Marshaller = FRichTextLayoutMarshaller::Create(TextParser, CreateMarkupWriter(), CreatedDecorators, StyleInstance.Get());
 	if (Segments && CurrentSegmentIndex)
 	{
+		// add custom decorator to intercept partially typed segments
 		Marshaller->AppendInlineDecorator(MakeShared<FPartialDialogueDecorator>(Segments, CurrentSegmentIndex));
 	}
 
