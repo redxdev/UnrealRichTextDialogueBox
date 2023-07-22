@@ -184,7 +184,7 @@ TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 
 	MyRichTextBlock =
 		SNew(SDialogueTextBlock)
-		.TextStyle(bOverrideDefaultStyle ? &DefaultTextStyleOverride : &DefaultTextStyle)
+		.TextStyle(bOverrideDefaultStyle ? &GetDefaultTextStyleOverride() : &DefaultTextStyle)
 		.Marshaller(Marshaller);
 
 	return MyRichTextBlock.ToSharedRef();
