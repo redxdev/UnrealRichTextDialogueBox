@@ -3,7 +3,7 @@
 #include "DialogueBox.h"
 #include "Engine/Font.h"
 #include "Styling/SlateStyle.h"
-#include "Widgets/Text/SRichTextBlock.h"
+#include "SDialogueTextBlock.h"
 #include "TimerManager.h"
 
 #include <Framework/Text/SlateTextRun.h>
@@ -149,6 +149,23 @@ private:
 	const int32* CurrentSegmentIndex;
 };
 
+void UDialogueTextBlock::SetText(const FText& InText, const FText& InFinalText)
+{
+	if (SDialogueTextBlock* dialogueTextBlock = static_cast<SDialogueTextBlock*>(MyRichTextBlock.Get()))
+	{
+		dialogueTextBlock->SetText(dialogueTextBlock->MakeTextAttribute(InText, InFinalText));
+	}
+	else
+	{
+		Super::SetText(InText);
+	}
+}
+
+void UDialogueTextBlock::SetText(const FText& InText)
+{
+	Super::SetText(InText);
+}
+
 TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 {
 	// Copied from URichTextBlock::RebuildWidget
@@ -166,7 +183,7 @@ TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 	}
 
 	MyRichTextBlock =
-		SNew(SRichTextBlock)
+		SNew(SDialogueTextBlock)
 		.TextStyle(bOverrideDefaultStyle ? &DefaultTextStyleOverride : &DefaultTextStyle)
 		.Marshaller(Marshaller);
 
@@ -197,7 +214,7 @@ void UDialogueBox::PlayLine(const FText& InLine)
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::GetEmpty());
+			LineText->SetText(FText::GetEmpty(), FText::GetEmpty());
 		}
 
 		bHasFinishedPlaying = true;
@@ -209,7 +226,7 @@ void UDialogueBox::PlayLine(const FText& InLine)
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::GetEmpty());
+			LineText->SetText(FText::GetEmpty(), CurrentLine);
 		}
 
 		bHasFinishedPlaying = false;
@@ -231,7 +248,7 @@ void UDialogueBox::SkipToLineEnd()
 	CurrentLetterIndex = MaxLetterIndex - 1;
 	if (IsValid(LineText))
 	{
-		LineText->SetText(FText::FromString(CalculateSegments()));
+		LineText->SetText(FText::FromString(CalculateSegments()), CurrentLine);
 	}
 
 	bHasFinishedPlaying = true;
@@ -259,7 +276,7 @@ void UDialogueBox::PlayNextLetter()
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::FromString(WrappedString));
+			LineText->SetText(FText::FromString(WrappedString), CurrentLine);
 		}
 
 		OnPlayLetter();
@@ -269,7 +286,7 @@ void UDialogueBox::PlayNextLetter()
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::FromString(CalculateSegments()));
+			LineText->SetText(FText::FromString(CalculateSegments()), CurrentLine);
 		}
 
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();

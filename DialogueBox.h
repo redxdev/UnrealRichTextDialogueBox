@@ -31,7 +31,13 @@ public:
 		CurrentSegmentIndex = InCurrentSegmentIndex;
 	}
 
+	// variant method to feed slate widget more info
+	void SetText(const FText& InText, const FText& InFinalText);
+
 protected:
+	// implementation hidden in favour of two parameter variant
+	void SetText(const FText& InText) override;
+
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
 private:
