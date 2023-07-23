@@ -31,12 +31,16 @@ public:
 		CurrentSegmentIndex = InCurrentSegmentIndex;
 	}
 
-	// variant method to feed slate widget more info
-	void SetText(const FText& InText, const FText& InFinalText);
+	// variants to feed slate widget more info
+	void SetTextPartiallyTyped(const FText& InText, const FText& InFinalText);
+	void SetTextFullyTyped(const FText& InText);
 
 protected:
-	// implementation hidden in favour of two parameter variant
-	void SetText(const FText& InText) override;
+	// implementation hidden in favour of explicit variants
+	void SetText(const FText& InText) override
+	{
+		URichTextBlock::SetText(InText);
+	}
 
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 

@@ -149,10 +149,12 @@ private:
 	const int32* CurrentSegmentIndex;
 };
 
-void UDialogueTextBlock::SetText(const FText& InText, const FText& InFinalText)
+void UDialogueTextBlock::SetTextPartiallyTyped(const FText& InText, const FText& InFinalText)
 {
+	ASSERT(!InText.IdenticalTo(InFinalText));
 	if (SDialogueTextBlock* dialogueTextBlock = static_cast<SDialogueTextBlock*>(MyRichTextBlock.Get()))
 	{
+		Text = FText::GetEmpty();
 		dialogueTextBlock->SetText(dialogueTextBlock->MakeTextAttribute(InText, InFinalText));
 	}
 	else
@@ -161,7 +163,7 @@ void UDialogueTextBlock::SetText(const FText& InText, const FText& InFinalText)
 	}
 }
 
-void UDialogueTextBlock::SetText(const FText& InText)
+void UDialogueTextBlock::SetTextFullyTyped(const FText& InText)
 {
 	Super::SetText(InText);
 }
@@ -214,7 +216,7 @@ void UDialogueBox::PlayLine(const FText& InLine)
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::GetEmpty(), FText::GetEmpty());
+			LineText->SetTextFullyTyped(FText::GetEmpty());
 		}
 
 		bHasFinishedPlaying = true;
@@ -226,7 +228,7 @@ void UDialogueBox::PlayLine(const FText& InLine)
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::GetEmpty(), CurrentLine);
+			LineText->SetTextPartiallyTyped(FText::GetEmpty(), CurrentLine);
 		}
 
 		bHasFinishedPlaying = false;
@@ -248,7 +250,7 @@ void UDialogueBox::SkipToLineEnd()
 	CurrentLetterIndex = MaxLetterIndex - 1;
 	if (IsValid(LineText))
 	{
-		LineText->SetText(FText::FromString(CalculateSegments()), CurrentLine);
+		LineText->SetTextFullyTyped(CurrentLine);
 	}
 
 	bHasFinishedPlaying = true;
@@ -276,7 +278,7 @@ void UDialogueBox::PlayNextLetter()
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::FromString(WrappedString), CurrentLine);
+			LineText->SetTextPartiallyTyped(FText::FromString(WrappedString), CurrentLine);
 		}
 
 		OnPlayLetter();
@@ -286,7 +288,7 @@ void UDialogueBox::PlayNextLetter()
 	{
 		if (IsValid(LineText))
 		{
-			LineText->SetText(FText::FromString(CalculateSegments()), CurrentLine);
+			LineText->SetTextFullyTyped(CurrentLine);
 		}
 
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
