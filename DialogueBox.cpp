@@ -151,15 +151,11 @@ private:
 
 void UDialogueTextBlock::SetTextPartiallyTyped(const FText& InText, const FText& InFinalText)
 {
-	ASSERT(!InText.IdenticalTo(InFinalText));
+	Super::SetText(InText);
+
 	if (SDialogueTextBlock* dialogueTextBlock = static_cast<SDialogueTextBlock*>(MyRichTextBlock.Get()))
 	{
-		Text = FText::GetEmpty();
 		dialogueTextBlock->SetText(dialogueTextBlock->MakeTextAttribute(InText, InFinalText));
-	}
-	else
-	{
-		Super::SetText(InText);
 	}
 }
 
