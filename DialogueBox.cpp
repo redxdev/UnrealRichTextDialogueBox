@@ -18,7 +18,7 @@ TSharedRef<SWidget> UDialogueTextBlock::RebuildWidget()
 
 	MyRichTextBlock =
 		SNew(SRichTextBlock)
-		.TextStyle(bOverrideDefaultStyle ? &DefaultTextStyleOverride : &DefaultTextStyle)
+		.TextStyle(&GetCurrentDefaultTextStyle())
 		.Marshaller(TextMarshaller)
 		.CreateSlateTextLayout(
 			FCreateSlateTextLayout::CreateWeakLambda(this, [this] (SWidget* InOwner, const FTextBlockStyle& InDefaultTextStyle) mutable
