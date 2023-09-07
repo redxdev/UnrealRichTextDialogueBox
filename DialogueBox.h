@@ -57,6 +57,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue Box")
 	float LetterPlayTime = 0.025f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue Box")
+	float PunctuationPauseTime = 0.4f;
+
 	// The amount of time to wait after finishing the line before actually marking it completed.
 	// This helps prevent accidentally progressing dialogue on short lines.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dialogue Box")
@@ -86,6 +89,7 @@ private:
 
 	void CalculateWrappedString();
 	FString CalculateSegments();
+	bool EndsWithPunctuation(const FString& s);
 
 	UPROPERTY()
 	FText CurrentLine;

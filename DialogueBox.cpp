@@ -75,7 +75,7 @@ void UDialogueBox::PlayLine(const FText& InLine)
 		FTimerDelegate Delegate;
 		Delegate.BindUObject(this, &ThisClass::PlayNextLetter);
 
-		TimerManager.SetTimer(LetterTimer, Delegate, LetterPlayTime, true);
+		TimerManager.SetTimer(LetterTimer, Delegate, LetterPlayTime, false);
 
 		SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
@@ -115,6 +115,19 @@ void UDialogueBox::PlayNextLetter()
 
 		OnPlayLetter();
 		++CurrentLetterIndex;
+
+		if (EndsWithPunctuation(WrappedString))
+		{
+			FTimerDelegate Delegate;
+			Delegate.BindUObject(this, &ThisClass::PlayNextLetter);
+			GetWorld()->GetTimerManager().SetTimer(LetterTimer, Delegate, PunctuationPauseTime, false);
+		}
+		else
+		{
+			FTimerDelegate Delegate;
+			Delegate.BindUObject(this, &ThisClass::PlayNextLetter);
+			GetWorld()->GetTimerManager().SetTimer(LetterTimer, Delegate, LetterPlayTime, false);
+		}
 	}
 	else
 	{
@@ -258,4 +271,13 @@ FString UDialogueBox::CalculateSegments()
 	}
 
 	return Result;
+}
+
+bool UDialogueBox::EndsWithPunctuation(const FString& s)
+{
+	return s.Len() > 2 &&
+		(s.Right(2) == TEXT(". ") ||
+		s.Right(2) == TEXT(", ") ||
+		s.Right(2) == TEXT("! ") ||
+		s.Right(2) == TEXT("? "));
 }
