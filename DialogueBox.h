@@ -9,6 +9,8 @@
 #include "Framework/Text/SlateTextLayout.h"
 #include "DialogueBox.generated.h"
 
+struct FDialogueTextSegment;
+
 /**
  * A text block that exposes more information about text layout.
  */
@@ -18,32 +20,45 @@ class UDialogueTextBlock : public URichTextBlock
 	GENERATED_BODY()
 
 public:
-	FORCEINLINE TSharedPtr<FSlateTextLayout> GetTextLayout() const
+	FORCEINLINE TSharedPtr<IRichTextMarkupParser> GetTextParser() const
 	{
-		return TextLayout;
+		return TextParser;
 	}
 
-	FORCEINLINE TSharedPtr<FRichTextLayoutMarshaller> GetTextMarshaller() const
+	FORCEINLINE void ConfigureFromParent(const TArray<FDialogueTextSegment>* InSegments, const int32* InCurrentSegmentIndex)
 	{
-		return TextMarshaller;
+		Segments = InSegments;
+		CurrentSegmentIndex = InCurrentSegmentIndex;
 	}
+
+	// variants to feed slate widget more info
+	void SetTextPartiallyTyped(const FText& InText, const FText& InFinalText);
+	void SetTextFullyTyped(const FText& InText);
 
 protected:
+	// implementation hidden in favour of explicit variants
+	void SetText(const FText& InText) override
+	{
+		URichTextBlock::SetText(InText);
+	}
+
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
 private:
-	TSharedPtr<FSlateTextLayout> TextLayout;
-	TSharedPtr<FRichTextLayoutMarshaller> TextMarshaller;
+	TSharedPtr<IRichTextMarkupParser> TextParser;
+
+	const TArray<FDialogueTextSegment>* Segments;
+	const int32* CurrentSegmentIndex;
 };
 
 struct FDialogueTextSegment
 {
 	FString Text;
-	FRunInfo RunInfo;
+	FTextRunParseResults RunInfo;
 };
 
 UCLASS()
-class FLAME_API UDialogueBox : public UUserWidget
+class UDialogueBox : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -81,6 +96,8 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Dialogue Box")
 	void OnLineFinishedPlaying();
 
+	void NativeOnInitialized() override;
+
 private:
 	void PlayNextLetter();
 
@@ -97,7 +114,6 @@ private:
 	// everything as the last few characters of a string may change if they're related to
 	// a named run that hasn't been completed yet.
 	FString CachedSegmentText;
-	int32 CachedLetterIndex = 0;
 
 	int32 CurrentSegmentIndex = 0;
 	int32 CurrentLetterIndex = 0;

@@ -16,10 +16,8 @@ you want.
 * Changing font-size (or using a decorator that's taller than the existing text) anywhere except at the beginning of a line will result in
   the entire line "jumping" down slightly to accomodate the new text size. I don't have a solution to this yet and don't see myself using
   different font sizes much, so it isn't something I'm likely to get to any time soon.
-* Text wrapping is only calculated a single time when the first character is played. If the widget is resized for any reason, text will
-  not respect the new boundaries. This should be simple to solve, I just haven't done it yet.
 * There may be some hidden i18n issues due to all the conversions between `FString`/`FText` and string indexing.
-* This has been tested with UE5.0EA, though it should work fine with earlier/later versions.
+* This has been tested with UE 5.2.0, though it should work fine with earlier/later versions.
 * The current implementation was quickly thrown together (see: hacky) and somewhat unoptimized. Some data is duplicated more than it needs
   to be, and "segment" calculation is a bit more complex than I'd like.
 
